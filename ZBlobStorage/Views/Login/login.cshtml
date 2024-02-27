@@ -1,0 +1,22 @@
+﻿<div class="logo">
+    <img src="/images/logofav.png" alt="Logo">
+</div>
+<div class="text-center mt-4 name">Login Form</div>
+<form class="p-3 mt-3" asp-controller="Login" asp-action="login" method="post" >
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+    <div class="form-field d-flex align-items-center">
+        <span class="far fa-user"></span>
+        <input type="text" name="userName" id="userName" placeholder="Username" />
+    </div>
+    <div class="form-field d-flex align-items-center">
+        <span class="fas fa-key"></span>
+        <input type="password" name="password" id="password" placeholder="Password" />
+    </div>
+    <button type="submit" class="btn mt-3">Login</button>
+</form>
+
