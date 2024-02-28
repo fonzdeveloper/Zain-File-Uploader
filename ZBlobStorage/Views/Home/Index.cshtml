@@ -4,45 +4,43 @@
     var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Arabian Standard Time");
 }
 @model IEnumerable<Azure.Storage.Blobs.Models.BlobItem>
-<div class="card">
-    <div class="card-header">
-        <h2>Upload Pin</h2>
-    </div>
+<div class="card">    
 <div class="card-body">
-<div class="text-center">
-    <div class="upload-form" style="margin-top: 50px; display: inline-block;">     
-        <form id="uploadForm" method="post" enctype="multipart/form-data">
-            @Html.AntiForgeryToken()
-            <div class="form-group d-flex justify-content-center">
-                <input type="file" class="form-control custom-file-input me-2" id="uploadedFile" name="uploadedFile" accept=".zip" required>
-                <button type="button" id="btnUpload" class="btn btn-primary custom-upload-btn">Upload</button>
-            </div>
-        </form>
+        <h5 class="card-title text-muted">Zain Vouchers</h5>
+        <div class="text-center">
+            <div class="upload-form" style="margin-top: 50px; display: inline-block;">     
+                <form id="uploadForm" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group d-flex justify-content-center">
+                        <input type="file" class="form-control custom-file-input me-2" id="uploadedFile" name="uploadedFile" accept=".zip" required>
+                        <button type="button" id="btnUpload" class="btn btn-primary custom-upload-btn">Upload</button>
+                    </div>
+                </form>
 
-        <br />
-        <progress id="fileProgress" class="fileProgressbar" style="display: none"></progress>
+                <br />
+                <progress id="fileProgress" class="fileProgressbar" style="display: none"></progress>
 
         
-</div>
-</div>
+        </div>
+        </div>
         <div class="card-deck">
             @foreach (var blob in Model)
             {
                 var fileSizeString = blob.Properties.ContentLength.HasValue ? FileSizeString(blob.Properties.ContentLength.Value) : "N/A";
                 var lastModified = blob.Properties.LastModified.HasValue ? blob.Properties.LastModified.Value.ToUniversalTime().AddHours(3).ToString() : "N/A";
                 <div class="col-md-4 mt-2">
-                    <div class="card pt-2">
+                    <div class="card p-3 shadow">
                         <div class="text-center">
-                            <img class="card-img-top"  src="~/images/zip.jpg" alt="" style="width:70px">
+                            <img class="card-img-top"  src="~/images/winrar.png" alt="" style="width:70px">
                         </div>
                         <div class="card-body">
                             <h5 class="card-title text-truncate" title="@blob.Name">@blob.Name</h5>
-                            <p class="card-text">Content Length: @fileSizeString</p>
-                            <p class="card-text"><small class="text-muted">Last Modified On: @lastModified.Replace("+00:00","")</small></p>
+                            <p class="card-text text-muted">Size: @fileSizeString</p>
+                            <p class="card-text"><small class="text-muted">Modified On: @lastModified.Replace("+00:00","")</small></p>
                         </div>
                         @if (User.IsInRole("Fonz"))
-                        {
-                            <div class="card-footer">
+                        {                            
+                            <div class="card-body">
                                 <div class="btn-group float-end" role="group" aria-label="options">
                                     <button type="button" class="btn btn-success btn-sm btnDownload" data-file-name="@blob.Name">
                                         <i class="fa fa-download"></i> Download
@@ -51,9 +49,7 @@
                                     <button class="btn btn-danger btn-sm" onclick="confirmDelete('@blob.Name')">
                                         <i class="fa fa-trash"></i> Delete
                                     </button>
-                                </div>
-
-                              
+                                </div>                              
                             </div>
                         }
                     </div>
@@ -121,6 +117,9 @@
 
            @*  }
         </div> *@
+
+</div>
+<div class="card-footer">
 
 </div>
 </div>

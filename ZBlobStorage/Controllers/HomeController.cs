@@ -3,7 +3,6 @@ using ZBlobStorage.Models;
 using System.Diagnostics;
 using AESCTR_Standard;
 using Azure.Storage.Blobs;
-using System.IO;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ZBlobStorage.Controllers
@@ -96,28 +95,23 @@ namespace ZBlobStorage.Controllers
                 }
 
                 // Upload the file to Azure Blob Storage
-                BlobServiceClient blobServiceClient = new BlobServiceClient(_storageConnectionString);
+                BlobServiceClient blobServiceClient = new(_storageConnectionString);
                 BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(_containerName);
                 var fileName = Path.GetFileName(uploadedFile.FileName);
                 BlobClient blobClient = containerClient.GetBlobClient(fileName);
 
-                using (Stream fileStream = uploadedFile.OpenReadStream())
+                using Stream fileStream = uploadedFile.OpenReadStream();
+                var fileUploadResponse = await blobClient.UploadAsync(fileStream, true);
+                if (fileUploadResponse != null && fileUploadResponse.GetRawResponse().Status == 201)
                 {
-                   var fileUploadResponse= await blobClient.UploadAsync(fileStream, true);
-                    if (fileUploadResponse != null && fileUploadResponse.GetRawResponse().Status == 201)
-                    {
-                        return Json(new { success = true, fileName = fileName });
-                    }
-                    else
-                    {
-                        return Json(new { success = false });
-                    }
-
+                    _logger.LogInformation("File uploaded successfully: {FileName}", fileName);
+                    return Json(new { success = true, fileName = fileName });
                 }
-
-                _logger.LogInformation("File uploaded successfully: {FileName}", fileName);
-
-               
+                else
+                {
+                    _logger.LogWarning("File failed to upload : {FileName}", fileName);
+                    return Json(new { success = false });
+                }
             }
             catch (Exception ex)
             {
@@ -131,17 +125,7 @@ namespace ZBlobStorage.Controllers
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
                 return StatusCode(500, string.Join(" ", errors));
             }
-        }
-
-        // Check if the file is a ZIP file
-        private bool IsZipFile(IFormFile file)
-        {
-            // ZIP file MIME types
-            var zipMimeTypes = new[] { "application/zip", "application/x-zip-compressed", "application/octet-stream" };
-
-            // Check if the file's MIME type matches any of the ZIP file MIME types
-            return zipMimeTypes.Contains(file.ContentType.ToLower());
-        }
+        }        
 
         [Authorize(Roles = "Fonz")]
         [HttpPost]
@@ -150,7 +134,7 @@ namespace ZBlobStorage.Controllers
         {
             try
             {
-                BlobServiceClient blobServiceClient = new BlobServiceClient(_storageConnectionString);
+                BlobServiceClient blobServiceClient = new(_storageConnectionString);
                 BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(_containerName);
                 BlobClient blobClient = containerClient.GetBlobClient(fileName);
 
@@ -197,7 +181,7 @@ namespace ZBlobStorage.Controllers
                 memoryStream.Position = 0;
 
                 // Determine the content type based on the file extension
-                var contentType = GetContentType(fileName);
+                var contentType = GetContentType();
 
                 // Return the file content as JSON data
                 return Json(new { success = true, data = Convert.ToBase64String(memoryStream.ToArray()), contentType = contentType });
@@ -210,19 +194,28 @@ namespace ZBlobStorage.Controllers
                 // Return an error response
                 return Json(new { success = false, error = "An error occurred while downloading the file." });
             }
-        }
-
-        // content type based on the file extension
-        private string GetContentType(string fileName)
-        {
-           return "application/octet-stream";
-        }
+        }       
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        #endregion
+        #region PRIVATE
+        // content type based on the file extension
+        private static string GetContentType() => "application/octet-stream";
+
+        // Check if the file is a ZIP file
+        private static bool IsZipFile(IFormFile file)
+        {
+            // ZIP file MIME types
+            var zipMimeTypes = new[] { "application/zip", "application/x-zip-compressed", "application/octet-stream" };
+
+            // Check if the file's MIME type matches any of the ZIP file MIME types
+            return zipMimeTypes.Contains(file.ContentType.ToLower());
+        }
+        #endregion
     }
-    #endregion
 }
