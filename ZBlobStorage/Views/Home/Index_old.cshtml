@@ -2,13 +2,10 @@
     ViewData["Title"] = "Home Page";
     Layout = "_Layout";
     var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Arabian Standard Time");
-
-   
 }
- @model List<BlobItemViewModel>
-
-<div class="card">
-    <div class="card-body">
+@model IEnumerable<Azure.Storage.Blobs.Models.BlobItem>
+<div class="card">    
+<div class="card-body">
         <h5 class="card-title text-muted"></h5>
         <div class="text-center">
             <div class="upload-form" style="margin-top: 50px; display: inline-block;">
@@ -28,89 +25,113 @@
                 <br />
                 <progress id="fileProgress" class="fileProgressbar" style="display: none"></progress>
 
-
-            </div>
+        
         </div>
-        <div class="card-deck">         
-            <div class="container">
-                <h2>Folders</h2>
-
-                <div class="row">
-                    @foreach (var folder in ViewBag.Folders)
-                    {
-                        <div class="col-md-4 mt-2">
-                            <div class="card p-3 shadow">
-                                <div class="text-center">
-                                    <img class="card-img-top" src="~/images/foldericon.png" alt="" style="width:70px">
-                                </div>
-                                <div class="card-body">
-                                    <h5 class="card-title text-truncate" title="@folder">@folder</h5>
-                                    <p class="card-text text-muted">Folder</p>
-                                </div>
-                                @if (User.IsInRole("Fonz"))
-                                {
-                                    <div class="card-body">
-                                        <div class="btn-group float-end" role="group" aria-label="options">
-                                            <a href="@Url.Action("OpenFolder", "Home", new { folderName = folder })" class="btn btn-primary btn-sm">
-                                                <i class="fa fa-folder-open"></i> Open
-                                            </a>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
+        </div>
+        <div class="card-deck">
+            @foreach (var blob in Model)
+            {
+                var fileSizeString = blob.Properties.ContentLength.HasValue ? FileSizeString(blob.Properties.ContentLength.Value) : "N/A";
+                var lastModified = blob.Properties.LastModified.HasValue ? blob.Properties.LastModified.Value.ToUniversalTime().AddHours(3).ToString() : "N/A";
+                <div class="col-md-4 mt-2">
+                    <div class="card p-3 shadow">
+                        <div class="text-center">
+                            <img class="card-img-top"  src="~/images/winrar.png" alt="" style="width:70px">
                         </div>
-                    }
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate" title="@blob.Name">@blob.Name</h5>
+                            <p class="card-text text-muted">Size: @fileSizeString</p>
+                            <p class="card-text"><small class="text-muted">Modified On: @lastModified.Replace("+00:00","")</small></p>
+                        </div>
+                        @if (User.IsInRole("Fonz"))
+                        {                            
+                            <div class="card-body">
+                                <div class="btn-group float-end" role="group" aria-label="options">
+                                    <button type="button" class="btn btn-success btn-sm btnDownload" data-file-name="@blob.Name">
+                                        <i class="fa fa-download"></i> Download
+                                    </button>
+
+                                    <button class="btn btn-danger btn-sm" onclick="confirmDelete('@blob.Name')">
+                                        <i class="fa fa-trash"></i> Delete
+                                    </button>
+                                </div>                              
+                            </div>
+                        }
+                    </div>
                 </div>
-            </div>
-         
+            }
         </div>
-    </div>
-    <div class="card-footer"></div>
-</div>
-@functions {
-    string FileSizeString(long bytes)
-    {
-        const int scale = 1024;
-        string[] orders = new string[] { "GB", "MB", "KB", "Bytes" };
-        long max = (long)Math.Pow(scale, orders.Length - 1);
 
-        foreach (string order in orders)
+
+       @*  <table id="blobTable" class="table table-striped  table-hover">
+    <thead>
+        <tr>
+            <th>File Name</th>             
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var blob in Model)
         {
-            if (bytes > max)
-                return string.Format("{0:##.##} {1}", decimal.Divide(bytes, max), order);
+            <tr>
+                <td>
+                    @blob.Properties.        
+                </td>
 
-            max /= scale;
+                <td>
+                            
+                    @if (User.IsInRole("Fonz"))
+                    {
+                      <button type="button" class="btn btn-success btnDownload">Download</button>
+                                <button class="btn btn-danger" onclick="confirmDelete('@blob.Name')">Delete</button>
+                    }
+                </td>
+            </tr>
         }
+    </tbody>
+</table> *@
 
-        return "0 Bytes";
-    }
-}
+    
+
+              
+
+
+           @*  }
+        </div> *@
+
+</div>
+<div class="card-footer">
+
+</div>
+</div>
 <script src="~/js/jquery.min.js"></script>
-<script>
+@* <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script> *@
+<script>  
     $(document).ready(function () {
         $('#blobTable').DataTable();
 
-        $("#btnUpload").on("click", function () {
+        $("#btnUpload").on("click", function () 
+        {
             var token = $('input[name="__RequestVerificationToken"]').val();
 
             var formData = new FormData();
             formData.append("uploadedFileDate", $("#uploadedFileDate").val());
             formData.append("uploadedFile", $("#uploadedFile")[0].files[0]);
-            $.ajax({
-                url: '/Home/Index',
-                type: 'POST',
-                data: formData,
-                cache: false,
-                contentType: false,
-                processData: false,
-                headers: {
-                    RequestVerificationToken: token // Include Anti-Forgery Token in the request headers
-                },
-                success: function (data) {
-                    $("#fileProgress").hide();
-                    $("#uploadedFile").val(""); // Clear file upload input field
-
-                    // Display success message using SweetAlert
+                $.ajax({
+                    url: '/Home/Index',
+                    type: 'POST',
+                    data: formData,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    headers: {
+                        RequestVerificationToken: token // Include Anti-Forgery Token in the request headers
+                    },
+                    success: function (data) {
+                        $("#fileProgress").hide();
+                        $("#uploadedFile").val(""); // Clear file upload input field                       
+                      
+                        // Display success message using SweetAlert
                     swal({
                         title: "Success",
                         text: data.fileName + " has been uploaded successfully",
@@ -119,34 +140,36 @@
                         // Reload the page after the user clicks "OK"
                         location.reload();
                     });
-                },
-                error: function (xhr, status, error) {
-                    $("#fileProgress").hide();
-                    $("#uploadedFile").val(""); // Clear file upload input field
+                    },
+                    error: function (xhr, status, error) {
+                        $("#fileProgress").hide();
+                        $("#uploadedFile").val(""); // Clear file upload input field
 
-                    // Display error message using SweetAlert
-                    swal("Error", xhr.responseText, "error");
-                },
-                xhr: function () {
-                    var fileXhr = $.ajaxSettings.xhr();
-                    if (fileXhr.upload) {
-                        $("#fileProgress").show();
-                        fileXhr.upload.addEventListener("progress", function (e) {
-                            if (e.lengthComputable) {
-                                $("#fileProgress").attr({
-                                    value: e.loaded,
-                                    max: e.total
-                                });
-                            }
-                        }, false);
+                        // Display error message using SweetAlert
+                        swal("Error", xhr.responseText, "error");
+                    },
+                    xhr: function () {
+                        var fileXhr = $.ajaxSettings.xhr();
+                        if (fileXhr.upload) {
+                            $("#fileProgress").show();
+                            fileXhr.upload.addEventListener("progress", function (e) {
+                                if (e.lengthComputable) {
+                                    $("#fileProgress").attr({
+                                        value: e.loaded,
+                                        max: e.total
+                                    });
+                                }
+                            }, false);
+                        }
+                        return fileXhr;
                     }
-                    return fileXhr;
-                }
-            });
+                });
         });
         $(".btnDownload").on("click", function () {
             var token = $('input[name="__RequestVerificationToken"]').val();
+            //var file = $(this).closest('tr').find('td:first-child').text().trim();
             var file = $(this).data('file-name');
+            console.log(file);
             $.ajax({
                 url: '/Home/Download',
                 type: 'POST',
@@ -217,16 +240,10 @@
                     return fileXhr;
                 }
             });
-        });
 
-        $(".btnOpenFolder").on("click", function () {
-            var folderName = $(this).data('folder-name');
-            // Redirect to the folder view
-            window.location.href = '/Home/Folder?folderName=' + folderName;
         });
 
     });
-
     function confirmDelete(fileName) {
         // Show a confirmation dialog before deleting the file
         swal({
@@ -242,7 +259,6 @@
             }
         });
     }
-
     //Delete
     function deleteFile(fileName) {
         var token = $('input[name="__RequestVerificationToken"]').val();
@@ -272,6 +288,22 @@
             }
         });
     }
+   @functions {
+    string FileSizeString(long bytes)
+    {
+        const int scale = 1024;
+        string[] orders = new string[] { "GB", "MB", "KB", "Bytes" };
+        long max = (long)Math.Pow(scale, orders.Length - 1);
 
-   
+        foreach (string order in orders)
+        {
+            if (bytes > max)
+                return string.Format("{0:##.##} {1}", decimal.Divide(bytes, max), order);
+
+            max /= scale;
+        }
+
+        return "0 Bytes";
+    }
+}
 </script>

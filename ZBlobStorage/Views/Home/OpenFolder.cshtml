@@ -1,0 +1,193 @@
+﻿@using System.Web
+@model IEnumerable<BlobItemViewModel>
+
+@{
+    ViewData["Title"] = "Folder Contents";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">        
+       
+       
+            <h2>Contents of @ViewBag.FolderName</h2>
+       @*  @if (!string.IsNullOrEmpty(ViewBag.FolderName))
+        {
+            <input type="hidden" name="prevfolder" value="@ViewBag.FolderName" />
+        } *@
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary">Go Back to Home</a>
+    </div>
+    <div class="row">
+        @if (ViewBag.Folders != null)
+        {
+            foreach (var folder in ViewBag.Folders)
+            {
+                <div class="col-md-4 mt-2">
+                    <div class="card p-3 shadow">
+                        <div class="text-center">
+                            <img class="card-img-top" src="~/images/foldericon.png" alt="" style="width:70px">
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate" title="@folder.Name">@folder.Name</h5>
+                            <p class="card-text text-muted">Folder</p>
+                            <a href="@Url.Action("OpenFolder", new { folderName = folder.Name,prevFolder=@ViewBag.FolderName })" class="btn btn-primary btn-sm">
+                                <i class="fa fa-folder-open"></i> Open
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        @if (ViewBag.Files != null)
+        {
+            foreach (var file in ViewBag.Files)
+            {
+                <div class="col-md-4 mt-2">
+                    <div class="card p-3 shadow">
+                        <div class="text-center">
+                            <img class="card-img-top" src="~/images/winrar.png" alt="" style="width:70px">
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate" title="@file.Name">@file.Name</h5>
+                            <p class="card-text text-muted">File</p>
+                            <p class="card-text text-muted">Size: @FileSizeString((long)file.Properties.ContentLength)</p>
+                            <p class="card-text text-muted">Modified On: @(file.Properties.LastModified?.ToLocalTime().ToString() ?? "N/A")</p>
+                            @if (User.IsInRole("Fonz"))
+                            {
+                                string filename = "/" + @ViewBag.FolderName + "/" + file.Name;
+                                string encodedFilename = HttpUtility.UrlEncode(filename); // Encode the filename
+                                <div class="btn-group float-end" role="group" aria-label="options">
+                                    <a href="@Url.Action("Download", new { fileName = encodedFilename })" class="btn btn-success btn-sm">
+                                        <i class="fa fa-download"></i> Download
+                                    </a>
+                                </div>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@functions {
+    string FileSizeString(long bytes)
+    {
+        const int scale = 1024;
+        string[] orders = new string[] { "GB", "MB", "KB", "Bytes" };
+        long max = (long)Math.Pow(scale, orders.Length - 1);
+
+        foreach (string order in orders)
+        {
+            if (bytes > max)
+                return string.Format("{0:##.##} {1}", decimal.Divide(bytes, max), order);
+
+            max /= scale;
+        }
+
+        return "0 Bytes";
+    }
+}
+<script src="~/js/jquery.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+        $(".btnOpenFolder").on("click", function () {
+            var folderName = $(this).data('folder-name');
+            var prevFolder = $(this).data('prevFolder');            
+           
+            // var prevFolder = $("input[name='prevfolder']").val(); // Get the value of prevfolder
+            console.log(prevFolder);
+            var url = '/Home/Folder?folderName=' + folderName;
+
+            // If prevfolder has a value, append it to the URL
+            if (prevFolder) {
+                url += '&prevfolder=' + prevFolder;
+            }
+
+            // Redirect to the folder view
+            window.location.href = url;
+        });
+    
+
+        $(".btnDownload").on("click", function () {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            var file = $(this).data('file-name');
+            alert(file);
+            $.ajax({
+                url: '/Home/Download',
+                type: 'POST',
+                data: { fileName: file }, // Pass the file name as data to the server
+                headers: {
+                    RequestVerificationToken: token
+                },
+                success: function (response) {
+                    if (response.success) {
+                        // Decode the base64 encoded file content
+                        var binary = atob(response.data);
+                        var array = new Uint8Array(binary.length);
+                        for (var i = 0; i < binary.length; i++) {
+                            array[i] = binary.charCodeAt(i);
+                        }
+                        // Create a Blob from the array
+                        var blob = new Blob([array], { type: response.contentType });
+                        // Create a URL for the Blob
+                        var url = window.URL.createObjectURL(blob);
+                        // Create a link element and trigger a click to initiate download
+                        var link = document.createElement('a');
+                        link.href = url;
+                        link.download = file;
+                        document.body.appendChild(link);
+                        link.click();
+                        // Clean up
+                        window.URL.revokeObjectURL(url);
+                        $("#fileProgress").hide();
+                        // Optionally, reload the page
+                        // location.reload();
+                    } else {
+                        // Display error message using SweetAlert
+                        swal({
+                            title: "Error",
+                            text: "Failed to download the file.",
+                            icon: "error",
+                        }).then(function () {
+                            // Reload the page after the user clicks "OK"
+                            location.reload();
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $("#fileProgress").hide();
+                    // Display error message using SweetAlert
+                    swal({
+                        title: "Error",
+                        text: xhr.responseText,
+                        icon: "error",
+                    }).then(function () {
+                        // Reload the page after the user clicks "OK"
+                        location.reload();
+                    });
+                },
+                xhr: function () {
+                    var fileXhr = $.ajaxSettings.xhr();
+                    if (fileXhr.upload) {
+                        $("#fileProgress").show();
+                        fileXhr.upload.addEventListener("progress", function (e) {
+                            if (e.lengthComputable) {
+                                $("#fileProgress").attr({
+                                    value: e.loaded,
+                                    max: e.total
+                                });
+                            }
+                        }, false);
+                    }
+                    return fileXhr;
+                }
+            });
+        });
+
+    });
+
+</script>
