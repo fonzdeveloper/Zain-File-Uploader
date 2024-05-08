@@ -3,7 +3,7 @@
     Layout = "_Layout";
     var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Arabian Standard Time");
 
-   
+
 }
  @model List<BlobItemViewModel>
 
@@ -11,8 +11,10 @@
     <div class="card-body">
         <h5 class="card-title text-muted"></h5>
         <div class="text-center">
-            <div class="upload-form" style="margin-top: 50px; display: inline-block;">
-                <form id="uploadForm" method="post" enctype="multipart/form-data">
+            @if (User.IsInRole("Fonz"))
+            {
+                <div class="upload-form" style="margin-top: 50px; display: inline-block;">
+                    <form id="uploadForm" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
                     <div class="form-group d-flex justify-content-center">
                         <label class="pr-2">Select Date : </label>
@@ -30,25 +32,27 @@
 
 
             </div>
+            }
         </div>
         <div class="card-deck">         
             <div class="container">
                 <h2>Folders</h2>
 
                 <div class="row">
-                    @foreach (var folder in ViewBag.Folders)
+                    @if (ViewBag.Folders != null)
                     {
-                        <div class="col-md-4 mt-2">
-                            <div class="card p-3 shadow">
-                                <div class="text-center">
-                                    <img class="card-img-top" src="~/images/foldericon.png" alt="" style="width:70px">
-                                </div>
-                                <div class="card-body">
-                                    <h5 class="card-title text-truncate" title="@folder">@folder</h5>
-                                    <p class="card-text text-muted">Folder</p>
-                                </div>
-                                @if (User.IsInRole("Fonz"))
-                                {
+                        @foreach (var folder in ViewBag.Folders)
+                        {
+                            <div class="col-md-4 mt-2">
+                                <div class="card p-3 shadow">
+                                    <div class="text-center">
+                                        <img class="card-img-top" src="~/images/foldericon.png" alt="" style="width:70px">
+                                    </div>
+                                    <div class="card-body">
+                                        <h5 class="card-title text-truncate" title="@folder">@folder</h5>
+                                        <p class="card-text text-muted">Folder</p>
+                                    </div>
+
                                     <div class="card-body">
                                         <div class="btn-group float-end" role="group" aria-label="options">
                                             <a href="@Url.Action("OpenFolder", "Home", new { folderName = folder })" class="btn btn-primary btn-sm">
@@ -56,16 +60,20 @@
                                             </a>
                                         </div>
                                     </div>
-                                }
+
+                                </div>
                             </div>
-                        </div>
+                        }
+                    }
+                    else
+                    {
+                        <p> Empty Folder  </p>
                     }
                 </div>
             </div>
          
         </div>
     </div>
-    <div class="card-footer"></div>
 </div>
 @functions {
     string FileSizeString(long bytes)

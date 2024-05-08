@@ -304,11 +304,13 @@ namespace ZBlobStorage.Controllers
                             {
                                 var folderNames = blob.Name.Split('/');
                                 var fileName = folderNames.Length > 1 ? folderNames[2] : "";
+                                var filepath=Path.GetExtension(fileName);
                                 return new BlobItemViewModel
                                 {
                                     Name = fileName,
                                     Properties = blob.Properties,
-                                    IsFolder = false
+                                    IsFolder = false,
+                                    Fileextension=filepath
                                 };
                             })
                             .Distinct() // Ensure uniqueness

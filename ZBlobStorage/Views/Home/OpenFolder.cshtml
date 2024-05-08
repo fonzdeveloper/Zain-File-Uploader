@@ -1,10 +1,23 @@
 ﻿@using System.Web
+@using System.IO
 @model IEnumerable<BlobItemViewModel>
 
 @{
     ViewData["Title"] = "Folder Contents";
     Layout = "_Layout";
 }
+<style>
+    .file-icon {
+        width: 70px;
+        height: 70px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        border: 0 !important;
+    }
+
+</style>
+
 
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">        
@@ -24,7 +37,7 @@
             {
                 <div class="col-md-4 mt-2">
                     <div class="card p-3 shadow">
-                        <div class="text-center">
+                        <div class="text-center" >
                             <img class="card-img-top" src="~/images/foldericon.png" alt="" style="width:70px">
                         </div>
                         <div class="card-body">
@@ -44,30 +57,45 @@
             {
                 <div class="col-md-4 mt-2">
                     <div class="card p-3 shadow">
-                        <div class="text-center">
-                            <img class="card-img-top" src="~/images/winrar.png" alt="" style="width:70px">
+                        <div class="text-center" data-filename="@file.Fileextension">
+                            <img class="card-img-top file-icon" style="width:70px; border: 0 !important;">
                         </div>
+
+                      @*   <div class="text-center file-icon" data-filename="@file.Fileextension">
+                            <div class="file-icon-content">
+                                <i class="fas fa-file"></i>
+                            </div>
+                            <div class="file-extension">
+                                @file.Fileextension
+                            </div>
+                        </div> *@
+                     @*    <div class="text-center">
+                            <li class="file-icon" data-filename="@file.Fileextension"></li>
+                        </div> *@
                         <div class="card-body">
-                            <h5 class="card-title text-truncate" title="@file.Name">@file.Name</h5>
-                            <p class="card-text text-muted">File</p>
+                            <h5 class="card-title text-truncate" title="@file.Name">@file.Name</h5>                            
                             <p class="card-text text-muted">Size: @FileSizeString((long)file.Properties.ContentLength)</p>
-                            <p class="card-text text-muted">Modified On: @(file.Properties.LastModified?.ToLocalTime().ToString() ?? "N/A")</p>
-                            @if (User.IsInRole("Fonz"))
-                            {
+                            <p class="card-text text-muted">Modified On: @(file.Properties.LastModified?.ToLocalTime().ToString().Replace("+03:00", "") ?? "N/A")</p>
+                           @{
                                 string filename = "/" + @ViewBag.FolderName + "/" + file.Name;
                                 string encodedFilename = HttpUtility.UrlEncode(filename); // Encode the filename
-                                <div class="btn-group float-end" role="group" aria-label="options">
+                               }
+                               <div class="btn-group float-end" role="group" aria-label="options">
                                     <a href="@Url.Action("Download", new { fileName = encodedFilename })" class="btn btn-success btn-sm">
                                         <i class="fa fa-download"></i> Download
                                     </a>
                                 </div>
-                            }
+                            
 
                         </div>
+                       
                     </div>
                 </div>
             }
         }
+    </div>
+    <div class="clearfix">
+        <br />
     </div>
 </div>
 
@@ -190,4 +218,47 @@
 
     });
 
+    document.addEventListener('DOMContentLoaded', function () {
+        var fileIcons = document.querySelectorAll('.file-icon');
+        fileIcons.forEach(function (icon) {
+            var extension = icon.parentElement.dataset.filename.toLowerCase();
+            if (extension.includes('.pdf')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/pdf.png")';
+            } 
+            else if (extension.includes('.doc') || extension.includes('.docx')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/doc.png")';
+            } 
+            else if (extension.includes('.xls') || extension.includes('.xlsx')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/xls.png")';
+            } 
+            else if (extension.includes('.png')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/png.png")';
+            }
+            else if (extension.includes('.jpeg')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/jpeg.png")';
+            }
+            else if (extension.includes('.jpg')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/jpg.png")';
+            }
+            else if (extension.includes('.gif')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/gif.png")';
+            }
+            else if (extension.includes('.csv')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/csv.png")';
+            }
+            else if (extension.includes('.zip')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/zip.png")';
+            }
+            else if (extension.includes('.html')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/html.png")';
+            }
+            else if (extension.includes('.txt')) {
+                icon.style.backgroundImage = 'url("/images/fileimages/txt.png")';
+            }
+            else {
+                // Default icon if extension is not recognized
+                icon.style.backgroundImage = 'url("/images/fileicon.png")';
+            }
+        });
+    });
 </script>

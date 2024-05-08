@@ -7,6 +7,8 @@ namespace ZBlobStorage.Models
         public string Name { get; set; }
 
         public string Folderpath { get; set; }
+
+        public string Fileextension { get; set; }
         public bool IsFolder { get; set; }
 
         /// <summary>
